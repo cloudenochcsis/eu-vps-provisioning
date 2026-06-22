@@ -1,0 +1,4 @@
+---
+backup_user: meridianbackup
+# backup_host: Hetzner IP, set in group_vars
+# restic_password: provided via Ansible Vault

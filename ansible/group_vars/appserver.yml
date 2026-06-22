@@ -1,0 +1,6 @@
+---
+# Application server vhosts
+nginx_sites:
+  - domain: "app.meridiandata.example"   # REPLACE with real subdomain
+    port: 3000                            # Next.js via PM2
+    max_body: "64m"

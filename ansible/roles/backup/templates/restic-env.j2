@@ -1,0 +1,3 @@
+# Restic backend = Hetzner box over SFTP. Repo is encrypted at rest with the password.
+export RESTIC_REPOSITORY="sftp:{{ backup_user }}@{{ backup_host }}:/home/{{ backup_user }}/restic/{{ inventory_hostname }}"
+export RESTIC_PASSWORD="{{ restic_password }}"   # supply via Ansible Vault

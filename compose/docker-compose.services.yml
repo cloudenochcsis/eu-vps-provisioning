@@ -1,0 +1,125 @@
+# Server 2 self-hosted services. All bound to 127.0.0.1 only; Nginx terminates SSL
+# and reverse-proxies each subdomain to the local port. Nothing is exposed publicly
+# except via Nginx (UFW allows only 80/443 + SSH).
+#
+# Secrets: supply via a .env file in the same directory (gitignored). Placeholders below.
+
+services:
+  # ---- Nextcloud (encrypted file storage) ----
+  nextcloud-db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: nextcloud
+      POSTGRES_USER: nextcloud
+      POSTGRES_PASSWORD: ${NEXTCLOUD_DB_PASSWORD}
+    volumes:
+      - nextcloud_db:/var/lib/postgresql/data
+
+  nextcloud:
+    image: nextcloud:29-apache
+    restart: unless-stopped
+    depends_on: [nextcloud-db]
+    ports:
+      - "127.0.0.1:8080:80"
+    environment:
+      POSTGRES_HOST: nextcloud-db
+      POSTGRES_DB: nextcloud
+      POSTGRES_USER: nextcloud
+      POSTGRES_PASSWORD: ${NEXTCLOUD_DB_PASSWORD}
+      NEXTCLOUD_TRUSTED_DOMAINS: ${NEXTCLOUD_DOMAIN}
+    volumes:
+      - nextcloud_data:/var/www/html
+
+  # ---- Hanko (self-hosted auth) ----
+  hanko-db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: hanko
+      POSTGRES_USER: hanko
+      POSTGRES_PASSWORD: ${HANKO_DB_PASSWORD}
+    volumes:
+      - hanko_db:/var/lib/postgresql/data
+
+  hanko:
+    image: ghcr.io/teamhanko/hanko:latest
+    restart: unless-stopped
+    depends_on: [hanko-db]
+    ports:
+      - "127.0.0.1:8000:8000"
+    command: serve public
+    # config mounted from ./hanko/config.yaml in production
+
+  # ---- n8n (workflow automation) ----
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5678:5678"
+    environment:
+      N8N_HOST: ${N8N_DOMAIN}
+      N8N_PROTOCOL: https
+      WEBHOOK_URL: https://${N8N_DOMAIN}/
+      GENERIC_TIMEZONE: Europe/Dublin
+    volumes:
+      - n8n_data:/home/node/.n8n
+
+  # ---- Zammad (helpdesk) ----
+  # Zammad ships its own compose; here it is referenced as a single entry for clarity.
+  # In production, vendor Zammad's official compose into ./zammad/ and include it.
+  zammad:
+    image: ghcr.io/zammad/zammad:latest
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8081:8080"
+    volumes:
+      - zammad_data:/opt/zammad
+
+  # ---- Bugsink (error tracking) ----
+  bugsink:
+    image: bugsink/bugsink:latest
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8082:8000"
+    environment:
+      SECRET_KEY: ${BUGSINK_SECRET_KEY}
+      CREATE_SUPERUSER: ${BUGSINK_ADMIN}
+    volumes:
+      - bugsink_data:/data
+
+  # ---- Matomo (analytics) ----
+  matomo-db:
+    image: mariadb:11
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: matomo
+      MARIADB_USER: matomo
+      MARIADB_PASSWORD: ${MATOMO_DB_PASSWORD}
+      MARIADB_ROOT_PASSWORD: ${MATOMO_DB_ROOT_PASSWORD}
+    volumes:
+      - matomo_db:/var/lib/mysql
+
+  matomo:
+    image: matomo:5-apache
+    restart: unless-stopped
+    depends_on: [matomo-db]
+    ports:
+      - "127.0.0.1:8083:80"
+    environment:
+      MATOMO_DATABASE_HOST: matomo-db
+      MATOMO_DATABASE_USERNAME: matomo
+      MATOMO_DATABASE_PASSWORD: ${MATOMO_DB_PASSWORD}
+      MATOMO_DATABASE_DBNAME: matomo
+    volumes:
+      - matomo_data:/var/www/html
+
+volumes:
+  nextcloud_db:
+  nextcloud_data:
+  hanko_db:
+  n8n_data:
+  zammad_data:
+  bugsink_data:
+  matomo_db:
+  matomo_data:

@@ -1,0 +1,29 @@
+---
+# Master playbook. Run: ansible-playbook -i inventory.ini site.yml
+# Run a single host group with --limit, e.g. --limit appserver
+
+- name: Baseline hardening on every server
+  hosts: all
+  become: true
+  roles:
+    - common
+
+- name: Application server (Nginx, Node 20, PostgreSQL 16, PM2)
+  hosts: appserver
+  become: true
+  roles:
+    - nginx
+    - appserver
+
+- name: Services server (Docker + 7 self-hosted services behind Nginx)
+  hosts: services
+  become: true
+  roles:
+    - docker
+    - nginx
+
+- name: Encrypted backups to Hetzner (Restic)
+  hosts: appserver:services
+  become: true
+  roles:
+    - backup

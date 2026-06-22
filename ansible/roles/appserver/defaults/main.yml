@@ -1,0 +1,4 @@
+---
+app_db_name: meridian_app
+app_db_user: meridian
+# app_db_password: provided via Ansible Vault (group_vars/appserver/vault.yml)

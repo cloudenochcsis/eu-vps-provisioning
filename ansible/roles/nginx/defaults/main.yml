@@ -1,0 +1,3 @@
+---
+certbot_email: "admin@example.com"   # REPLACE with client's email
+nginx_sites: []                       # defined per-host in group_vars (see below)

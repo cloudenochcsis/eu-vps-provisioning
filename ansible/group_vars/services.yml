@@ -1,0 +1,9 @@
+---
+# Services server vhosts. Ports map to the docker-compose service bindings.
+nginx_sites:
+  - { domain: "files.meridiandata.example",     port: 8080 }   # Nextcloud
+  - { domain: "auth.meridiandata.example",      port: 8000 }   # Hanko
+  - { domain: "automation.meridiandata.example", port: 5678 }  # n8n
+  - { domain: "help.meridiandata.example",      port: 8081 }   # Zammad
+  - { domain: "errors.meridiandata.example",    port: 8082 }   # Bugsink
+  - { domain: "analytics.meridiandata.example", port: 8083 }   # Matomo

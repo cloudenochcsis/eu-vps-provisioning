@@ -1,0 +1,34 @@
+---
+- name: Install Nginx and Certbot
+  ansible.builtin.apt:
+    name:
+      - nginx
+      - certbot
+      - python3-certbot-nginx
+    state: present
+
+- name: Deploy reverse-proxy vhosts for each site
+  ansible.builtin.template:
+    src: reverse-proxy.conf.j2
+    dest: "/etc/nginx/sites-available/{{ item.domain }}.conf"
+    mode: "0644"
+  loop: "{{ nginx_sites }}"
+  notify: reload nginx
+
+- name: Enable sites
+  ansible.builtin.file:
+    src: "/etc/nginx/sites-available/{{ item.domain }}.conf"
+    dest: "/etc/nginx/sites-enabled/{{ item.domain }}.conf"
+    state: link
+  loop: "{{ nginx_sites }}"
+  notify: reload nginx
+
+- name: Obtain/renew Let's Encrypt certs (nginx authenticator)
+  ansible.builtin.command:
+    cmd: >
+      certbot --nginx -n --agree-tos
+      -m {{ certbot_email }}
+      -d {{ item.domain }}
+    creates: "/etc/letsencrypt/live/{{ item.domain }}/fullchain.pem"
+  loop: "{{ nginx_sites }}"
+  notify: reload nginx

@@ -1,0 +1,64 @@
+---
+# Server 1: Node.js 20+, PostgreSQL 16 (self-hosted), PM2 for Next.js
+
+- name: Add NodeSource 20.x repo key
+  ansible.builtin.apt_key:
+    url: https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key
+    state: present
+
+- name: Add NodeSource 20.x repository
+  ansible.builtin.apt_repository:
+    repo: "deb https://deb.nodesource.com/node_20.x nodistro main"
+    state: present
+
+- name: Add PostgreSQL PGDG repo key
+  ansible.builtin.apt_key:
+    url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+    state: present
+
+- name: Add PostgreSQL 16 repository
+  ansible.builtin.apt_repository:
+    repo: "deb http://apt.postgresql.org/pub/repos/apt {{ ansible_distribution_release }}-pgdg main"
+    state: present
+
+- name: Install Node.js and PostgreSQL 16
+  ansible.builtin.apt:
+    name:
+      - nodejs
+      - postgresql-16
+      - postgresql-client-16
+    state: present
+    update_cache: true
+
+- name: Install PM2 globally
+  community.general.npm:
+    name: pm2
+    global: true
+
+- name: Ensure PostgreSQL is running
+  ansible.builtin.service:
+    name: postgresql
+    state: started
+    enabled: true
+
+- name: Create application database
+  become: true
+  become_user: postgres
+  community.postgresql.postgresql_db:
+    name: "{{ app_db_name }}"
+    state: present
+
+- name: Create application DB user
+  become: true
+  become_user: postgres
+  community.postgresql.postgresql_user:
+    db: "{{ app_db_name }}"
+    name: "{{ app_db_user }}"
+    password: "{{ app_db_password }}"   # supply via Ansible Vault, never plaintext
+    priv: ALL
+    state: present
+
+- name: Configure PM2 to start on boot
+  ansible.builtin.command:
+    cmd: "pm2 startup systemd -u {{ admin_user }} --hp /home/{{ admin_user }}"
+    creates: /etc/systemd/system/pm2-{{ admin_user }}.service

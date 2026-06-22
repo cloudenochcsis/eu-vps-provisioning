@@ -1,0 +1,6 @@
+inventory.ini
+*.env
+.env
+**/vault.yml
+*.retry
+__pycache__/
