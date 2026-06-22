@@ -57,7 +57,3 @@ ansible-playbook -i ansible/inventory.ini ansible/site.yml
 ## Secrets
 No credentials live in this repo. DB passwords, the Restic password, and service
 secrets are supplied via Ansible Vault and a gitignored `.env`. See `compose/.env.example`.
-
----
-Built by Enoch Ayivor — Cloud & DevOps Engineer. Azure (AZ-104), Terraform Associate,
-CKA in progress.
